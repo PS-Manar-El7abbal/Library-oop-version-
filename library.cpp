@@ -36,12 +36,11 @@ public:
 };
 
 class Admin {
-private:
-    const string name = "ManarElhabbal";
-    const string password = "manarmanora";
 
 public:
     friend class LoanBook;  
+    static string name ;
+    static string password ;
     Admin() = default;
     void add_book() {
         cout << "Enter the name: ";
@@ -144,6 +143,8 @@ public:
 
 vector<User> User::users;
 vector<Book> Book::books;
+string Admin::name = "ManarElhabbal" ;
+string Admin::password = "manarmanora" ;
 
 class LoanBook {
 public:
@@ -250,6 +251,15 @@ void run() {
 }
 
 int main() {
+    cout << "Welcome to our library.\n";
+    string name,password;
+    cout << "Enter your name: ";cin >> name;
+    cout << "Enter your password: ";cin >> password;
+    if (name != Admin::name || password != Admin::password) {
+        cout << "Wrong username or password.\n";
+        return 0;
+    }
+    
     while (true) 
         run();
     return 0;
