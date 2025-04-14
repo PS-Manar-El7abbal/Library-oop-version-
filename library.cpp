@@ -1,266 +1,306 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-void run();
-void userOradmin();
-
-class Book;
-class User;
-class Book {
-private:
-    int id;
-    string name;
-    int quantity;
-
-public:
-    friend class LoanBook;
-    friend class Admin;
-    Book() = default;
-    Book(int id, string name, int quantity) : id(id), name(name), quantity(quantity) {}
-    static vector<Book> books;
-    vector<User> borrowers;
-};
-class User {
-private:
+class Person {
+protected:
     int id;
     string name;
     string password;
 
 public:
-    friend class LoanBook;
-    friend class Admin;
-    User() = default;
-    User(int id, string name, string password) : id(id), name(name), password(password) {}
-    static vector<User> users;
-    vector<Book> borrowed_books;
+    Person() = default;
+    Person(int id, string name, string password)
+        : id(id), name(name), password(password) {}
+
+    string get_name() const { return name; }
+    int get_id() const { return id; }
+    bool check_password(const string& pw) const { return password == pw; }
 };
 
-class Admin {
+
+class User; 
+
+class Book {
+private:
+    int id;
+    string name;
+    int quantity;
+    vector<User*> borrowers;
 
 public:
-    friend class LoanBook;  
-    static string name ;
-    static string password ;
-    Admin() = default;
-    void add_book() {
-        cout << "Enter the name: ";
-        string n;
-        cin.ignore();
-        getline(cin, n);
+    Book() = default;
+    Book(int id, string name, int quantity)
+        : id(id), name(name), quantity(quantity) {}
 
-        cout << "Enter the id: ";
-        int id_book;
-        cin >> id_book;
+    int get_id() const { return id; }
+    string get_name() const { return name; }
+    int get_quantity() const { return quantity; }
 
-        for (auto &book : Book::books) {
-            if (book.id == id_book) {
-                cout << "Change this id. This ID already exists.\n";
-                return;
-            }
-        }
+    void decrease_quantity() { if (quantity > 0) quantity--; }
+    void increase_quantity() { quantity++; }
 
-        cout << "Enter the quantity: ";
-        int q;
-        cin >> q;
-        
-        Book::books.push_back(Book(id_book, n, q));
-        cout << "Book added successfully.\n\n";
+    void add_borrower(User* user) { borrowers.push_back(user); }
+    void remove_borrower(int user_id);
+
+    const vector<User*>& get_borrowers() const { return borrowers; }
+
+    static vector<Book> books;
+};
+
+vector<Book> Book::books;
+
+class User : public Person {
+private:
+    vector<Book*> borrowed_books;
+
+public:
+    User() = default;
+    User(int id, string name, string password)
+        : Person(id, name, password) {}
+
+    void borrow_book(Book* book) {
+        borrowed_books.push_back(book);
     }
 
-    void who_borrow() {
-        cout << "Enter the book Name: ";
-        string book_name;
-        cin.ignore();
-        getline(cin, book_name);
+    void return_book(const string& book_name);
 
-        for (const auto &book : Book::books) {
-            if (book.name == book_name) {
-                cout << "Borrowers for " << book_name << ":\n";
-                if (book.borrowers.empty()) {
-                    cout << "No One borrow this book.\n\n";
-                    return;
+    const vector<Book*>& get_borrowed_books() const {
+        return borrowed_books;
+    }
+
+    static vector<User> users;
+};
+
+vector<User> User::users;
+
+void Book::remove_borrower(int user_id) {
+    borrowers.erase(
+        remove_if(borrowers.begin(), borrowers.end(),
+                    [user_id](User* u) { return u->get_id() == user_id; }),
+        borrowers.end());
+}
+
+void User::return_book(const string& book_name) {
+    auto it = find_if(borrowed_books.begin(), borrowed_books.end(),
+        [&book_name](Book* book) {
+            return book->get_name() == book_name;
+        });
+
+    if (it != borrowed_books.end()) {
+        (*it)->increase_quantity();
+        (*it)->remove_borrower(this->id);
+        borrowed_books.erase(it);
+        cout << "Book returned successfully.\n";
+    }
+    else {
+        cout << "Book not found in user's borrowed list.\n";
+    }
+}
+
+
+class Admin : public Person {
+public:
+    Admin() : Person(0, "ManarElhabbal", "manarmanora") {}
+
+    void add_book(const string& name, int id, int quantity) {
+        for (auto& book : Book::books) {
+            if (book.get_id() == id) {
+                cout << "Book ID already exists.\n";
+                return;
+            }
+        }
+        Book::books.emplace_back(id, name, quantity);
+        cout << "Book added successfully.\n";
+    }
+
+    void add_user(const string& name, int id) {
+        for (auto& u : User::users) {
+            if (u.get_name() == name) {
+                cout << "User already exists.\n";
+                return;
+            }
+        }
+        User::users.emplace_back(id, name, "password");
+        cout << "User added successfully.\n";
+    }
+
+    void who_borrowed(const string& book_name) {
+        for (const auto& book : Book::books) {
+            if (book.get_name() == book_name) {
+                if (book.get_borrowers().empty()) {
+                    cout << "No one borrowed this book.\n";
                 }
-                for (const auto &user : book.borrowers) {
-                    cout << "- " << user.name << '\n';
+                else {
+                    cout << "Borrowers:\n";
+                    for (const auto& user : book.get_borrowers()) {
+                        cout << "- " << user->get_name() << "\n";
+                    }
                 }
                 return;
             }
         }
-        cout << "No such book found.\n\n";
+        cout << "Book not found.\n";
     }
 
     void print_users() {
-        for (const auto &user : User::users) {
-            cout << "Name : " << user.name << " - ID : " << user.id << '\n';
-            if (user.borrowed_books.empty()) continue;
-            cout << "Books which this user borrowed:\n";
-            for (const auto &book : user.borrowed_books) {
-                cout << "Book name : " << book.name << " Book ID : " << book.id << '\n';
+        for (auto& user : User::users) {
+            cout << "User: " << user.get_name() << " - ID: " << user.get_id() << "\n";
+            auto books = user.get_borrowed_books();
+            if (!books.empty()) {
+                cout << "Borrowed Books:\n";
+                for (auto book : books) {
+                    cout << "  - " << book->get_name() << "\n";
+                }
             }
         }
     }
 
-    void add_user() {
-        cout << "Enter user name and ID: ";
-        string name;
-        int id;
-        cin >> name >> id;
-        for (const auto &u : User::users) {
-            if (u.name == name) {
-                cout << "User already exists.\n\n";
-                return;
-            }
-        }
-        User::users.push_back(User(id, name, "password"));
-        cout << "User added successfully.\n\n";
-    }
-
-    void print_by_id() {
-        sort(Book::books.begin(), Book::books.end(), [](const Book &a, const Book &b) {
-            return a.id < b.id;
-        });
-        for (const auto &book : Book::books) {
-            cout << "ID : " << book.id << " - Name : " << book.name << " Quantity :" << book.quantity << endl;
+    void print_books_by_id() {
+        sort(Book::books.begin(), Book::books.end(),
+            [](const Book& a, const Book& b) {
+                return a.get_id() < b.get_id();
+            });
+        for (const auto& book : Book::books) {
+            cout << "ID: " << book.get_id() << " - " << book.get_name()
+                << " | Quantity: " << book.get_quantity() << "\n";
         }
     }
 
-    void search_book_by_prefix() {
-        cout << "Enter the prefix to search: ";
-        string prefix;
-        cin >> prefix;
-
+    void search_book_by_prefix(const string& prefix) {
         bool found = false;
-        for (const auto &book : Book::books) {
-            if (book.name.substr(0, prefix.size()) == prefix) {
-                cout << book.name << endl;
+        for (const auto& book : Book::books) {
+            if (book.get_name().substr(0, prefix.size()) == prefix) {
+                cout << "- " << book.get_name() << "\n";
                 found = true;
             }
         }
-        if (!found) cout << "No books found with the given prefix.\n";
+        if (!found) cout << "No books found with this prefix.\n";
     }
 };
 
 
-vector<User> User::users;
-vector<Book> Book::books;
-string Admin::name = "ManarElhabbal" ;
-string Admin::password = "manarmanora" ;
-
-class LoanBook {
+class Loan_Service {
 public:
-    void borrow_book() {
-        cout << "Enter book name and user id: ";
-        string book_name;
-        int user_id;
-        cin.ignore();
-        getline(cin, book_name);
-        cin >> user_id;
-
-        Book *book = nullptr;
-        for (auto &b : Book::books) {
-            if (b.name == book_name && b.quantity > 0) {
+    void borrow_book(const string& book_name, int user_id) {
+        Book* book = nullptr;
+        for (auto& b : Book::books) {
+            if (b.get_name() == book_name && b.get_quantity() > 0) {
                 book = &b;
                 break;
             }
         }
+
         if (!book) {
             cout << "Book not found or unavailable.\n";
             return;
         }
 
-        for (auto &user : User::users) {
-            if (user.id == user_id) {
-                for (const auto &b : user.borrowed_books) {
-                    if (b.id == book->id) {
-                        cout << "User already borrowed this book.\n";
-                        return;
-                    }
-                }
-                user.borrowed_books.push_back(*book);
-                book->borrowers.push_back(user);
-                book->quantity--;
-                cout << "Successfully borrowed " << book->name << ".\n";
+        for (auto& user : User::users) {
+            if (user.get_id() == user_id) {
+                user.borrow_book(book);
+                book->add_borrower(&user);
+                book->decrease_quantity();
+                cout << "Book borrowed successfully.\n";
                 return;
             }
         }
         cout << "User not found.\n";
     }
 
-    void return_book() {
-        cout << "Enter book name and user id: ";
-        string book_name;
-        int user_id;
-        cin.ignore();
-        getline(cin, book_name);
-        cin >> user_id;
-
-        for (auto &user : User::users) {
-            if (user.id == user_id) {
-                auto it = find_if(user.borrowed_books.begin(), user.borrowed_books.end(),
-                                [&book_name](const Book &book) { return book.name == book_name; });
-
-                if (it != user.borrowed_books.end()) {
-                    user.borrowed_books.erase(it);
-                    for (auto &book : Book::books) {
-                        if (book.name == book_name) {
-                            book.quantity++;
-                            book.borrowers.erase(remove_if(book.borrowers.begin(), book.borrowers.end(),
-                                                        [user_id](const User &u) { return u.id == user_id; }),
-                                                book.borrowers.end());
-                            cout << "Successfully returned " << book.name << ".\n";
-                            return;
-                        }
-                    }
-                }
+    void return_book(const string& book_name, int user_id) {
+        for (auto& user : User::users) {
+            if (user.get_id() == user_id) {
+                user.return_book(book_name);
+                return;
             }
         }
-        cout << "No such borrowed book found.\n";
+        cout << "User not found.\n";
     }
 };
 
-void show_Menu() {
-    cout << "Library Menu:\n";
-    cout << "[1] add_book.\n";
-    cout << "[2] search book by prefix.\n";
-    cout << "[3] who borrowed the book.\n";
-    cout << "[4] print library by id and name.\n";
-    cout << "[5] Add user.\n";
-    cout << "[6] user borrow book.\n";
-    cout << "[7] user return book.\n";
-    cout << "[8] print users.\n";
-    cout << "[9] exit.\n";
+
+void show_menu() {
+    cout << "\n Library Menu:\n";
+    cout << "[1]  Add Book\n";
+    cout << "[2]  Search Book by Prefix\n";
+    cout << "[3]  Who Borrowed Book\n";
+    cout << "[4]  Print All Books\n";
+    cout << "[5]  Add User\n";
+    cout << "[6]  Borrow Book\n";
+    cout << "[7]  Return Book\n";
+    cout << "[8]  Print Users\n";
+    cout << "[9]  Exit\n";
+    cout << "Choose: ";
 }
 
-void run() {
-    show_Menu();
-    int choose = 0;
-    cin >> choose;
-    LoanBook L;
-    Admin ad1;
-    switch (choose) {
-        case 1: ad1.add_book(); break;
-        case 2: ad1.search_book_by_prefix(); break;
-        case 3: ad1.who_borrow(); break;
-        case 4: ad1.print_by_id(); break;
-        case 5: ad1.add_user(); break;
-        case 6: L.borrow_book(); break;
-        case 7: L.return_book(); break;
-        case 8: ad1.print_users(); break;
-        case 9: exit(0);
+void run(Admin& admin, Loan_Service& service) {
+    show_menu();
+    int choice;
+    cin >> choice;
+    cin.ignore();
+
+    string name;
+    int id, quantity;
+    switch (choice) {
+        case 1:
+            cout << "Book Name: "; getline(cin, name);
+            cout << "Book ID: "; cin >> id;
+            cout << "Quantity: "; cin >> quantity;
+            admin.add_book(name, id, quantity);
+            break;
+        case 2:
+            cout << "Prefix: "; cin >> name;
+            admin.search_book_by_prefix(name);
+            break;
+        case 3:
+            cout << "Book Name: "; getline(cin, name);
+            admin.who_borrowed(name);
+            break;
+        case 4:
+            admin.print_books_by_id();
+            break;
+        case 5:
+            cout << "User Name: "; cin >> name;
+            cout << "User ID: "; cin >> id;
+            admin.add_user(name, id);
+            break;
+        case 6:
+            cout << "Book Name: "; getline(cin, name);
+            cout << "User ID: "; cin >> id;
+            service.borrow_book(name, id);
+            break;
+        case 7:
+            cout << "Book Name: "; getline(cin, name);
+            cout << "User ID: "; cin >> id;
+            service.return_book(name, id);
+            break;
+        case 8:
+            admin.print_users();
+            break;
+        case 9:
+            exit(0);
+        default:
+            cout << "Invalid choice!\n";
     }
 }
+
 
 int main() {
-    cout << "Welcome to our library.\n";
-    string name,password;
-    cout << "Enter your name: ";cin >> name;
-    cout << "Enter your password: ";cin >> password;
-    if (name != Admin::name || password != Admin::password) {
-        cout << "Wrong username or password.\n";
+    Admin admin;
+    string name, pw;
+    cout << "Welcome to the Library System!\n";
+    cout << "Enter Admin Name: "; cin >> name;
+    cout << "Enter Password: "; cin >> pw;
+
+    if (name != admin.get_name() || !admin.check_password(pw)) {
+        cout << "Invalid credentials.\n";
         return 0;
     }
-    
-    while (true) 
-        run();
+
+    Loan_Service service;
+    while (true) {
+        run(admin, service);
+    }
+
     return 0;
 }
