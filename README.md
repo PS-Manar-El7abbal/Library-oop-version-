@@ -1,36 +1,39 @@
-📚 Library Management System – Version 2
-Welcome to the second version of my project, Library Management System!
-This project was developed as part of the course "Mastering Critical Thinking in C++" by Dr. Mostafa Saad.
+# 📚 Library System – Version 2
 
-📝 Project Summary
-This project simulates a Library Management System using Object-Oriented Programming (OOP) principles in C++.
-It involves the following main components:
+This is the **second version** of my project **Library System**, made as part of the course  
+**"Mastering Critical Thinking in C++"** by *Dr. Mostafa Saad*.
 
-Book: Represents each book, including its ID, title, quantity, and list of users who borrowed it.
+---
 
-User: Represents a library user who can borrow and return books.
+## 🔍 About the Project
 
-Admin: Handles administrative tasks such as adding books, managing users, and viewing borrowing activity.
+This project is a simple library management system using **OOP concepts in C++**.
 
-Loan_Service: Manages the borrowing and returning process.
+It includes the following classes:
 
-🔧 Key Features:
-Add and search for books by name prefix
+- **Book**: Has info like name, id, quantity, and who borrowed it.
+- **User**: Can borrow and return books.
+- **Admin**: Can add books/users and check who borrowed what.
+- **Loan_Service**: Handles borrowing and returning process.
 
-Display all books sorted by ID
+---
 
-Show users and the books they’ve borrowed
+## ✅ Features
 
-Identify who borrowed a specific book
+- Add/search books
+- Borrow/return books
+- Show all users and their borrowed books
+- Admin login system
 
-Admin login system for secure access
+---
 
-This system was designed following core OOP principles such as:
+## 💡 Concepts Used
 
-Encapsulation
+- Encapsulation
+- Inheritance
+- STL (`vector`, `string`)
+- Separation of logic using classes
 
-Inheritance
+---
 
-Separation of concerns
 
-Usage of C++ STL (vector, string, find_if, etc.) for efficient data handling
