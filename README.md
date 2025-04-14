@@ -1,7 +1,7 @@
 # 📚 Library System – Version 2
 
 This is the **second version** of my project **Library System**, made as part of the course  
-**"Mastering Critical Thinking in C++"** by *Dr. Mostafa Saad*.
+**"Mastering Critical Thinking using C++"** by *Dr. Mostafa Saad*.
 
 ---
 
